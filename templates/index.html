@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gestión de Turnos</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="container my-4">
+    <h1 class="mb-4">📅 Gestión de Turnos</h1>
+
+    <!-- Mensajes -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for category, msg in mensajes %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ msg }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Formulario -->
+    <form id="turnoForm" action="/agregar" method="post" class="row g-3 needs-validation" novalidate>
+
+        <div class="col-md-6">
+            <label for="nombre" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" required>
+            <div class="invalid-feedback">Ingrese el nombre.</div>
+        </div>
+
+        <div class="col-md-3">
+            <label for="fecha" class="form-label">Fecha</label>
+            <input type="date" class="form-control" id="fecha" name="fecha" required>
+            <div class="invalid-feedback">Seleccione una fecha.</div>
+        </div>
+
+        <div class="col-md-3">
+            <label for="hora" class="form-label">Hora</label>
+            <input type="time" class="form-control" id="hora" name="hora" required>
+            <div class="invalid-feedback">Seleccione una hora.</div>
+        </div>
+
+        <div class="col-12">
+            <button type="submit" class="btn btn-success">Agregar turno</button>
+        </div>
+    </form>
+
+    <!-- Lista -->
+    <div class="mt-4">
+        <h2>Turnos registrados</h2>
+
+        <ul class="list-group">
+            {% for turno in turnos %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    {{ turno[1] }} – {{ turno[2] }} a las {{ turno[3] }}
+
+                    <a href="/eliminar/{{ turno[0] }}"
+                       class="btn btn-outline-danger btn-sm"
+                       onclick="return confirm('¿Eliminar este turno?')">
+                        Eliminar
+                    </a>
+                </li>
+            {% else %}
+                <li class="list-group-item">No hay turnos registrados</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- JS Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Validación -->
+<script>
+(function () {
+    'use strict';
+    var form = document.getElementById('turnoForm');
+
+    form.addEventListener('submit', function (event) {
+        if (!form.checkValidity()) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        form.classList.add('was-validated');
+    }, false);
+})();
+</script>
+
+</body>
+</html>
