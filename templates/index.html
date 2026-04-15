@@ -13,14 +13,16 @@
 
     <!-- HERO / PRIMER IMPACTO -->
     <div class="text-center mb-5">
-        <h1 class="fw-bold">📅 Agenda de Turnos</h1>
-        <p class="lead">
-            Sistema simple para gestionar turnos de clientes sin papel ni Excel
-        </p>
-        <p class="text-muted">
-            Ideal para peluquerías, barberías, uñas y profesionales independientes
-        </p>
-    </div>
+    <h1 class="fw-bold">💈 Agenda de Turnos</h1>
+
+    <p class="lead">
+        Organizá tus clientes en segundos
+    </p>
+
+    <p class="text-muted">
+        Olvidate del papel, evitá superposiciones y atendé mejor
+    </p>
+</div>
 
     <!-- MENSAJES -->
     {% with mensajes = get_flashed_messages(with_categories=true) %}
@@ -38,7 +40,7 @@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
 
-            <h5 class="mb-3">➕ Crear nuevo turno</h5>
+            <h5 class="mb-3">➕ Agendá un turno</h5>
             <p class="text-muted">Completá los datos para agendar rápidamente.</p>
 
             <form id="turnoForm" action="/agregar" method="post" class="row g-3 needs-validation" novalidate>
@@ -62,8 +64,8 @@
                 </div>
 
                 <div class="col-12">
-                    <button type="submit" class="btn btn-success w-100">
-                        Agregar turno
+                    <button type="submit" class="btn btn-dark w-100">
+                        Guardar turno
                     </button>
                 </div>
             </form>
@@ -75,7 +77,7 @@
     <div class="card shadow-sm">
         <div class="card-body">
 
-            <h5 class="mb-3">📋 Turnos registrados</h5>
+            <h5 class="mb-3">📋 Próximos turnos</h5>
 
             <ul class="list-group">
                 {% for turno in turnos %}
