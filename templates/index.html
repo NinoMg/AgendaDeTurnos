@@ -105,11 +105,21 @@
                           </small>
                         </div>
 
-                        <a href="/eliminar/{{ turno[0] }}"
-                           class="btn btn-outline-danger btn-sm"
-                           onclick="return confirm('¿Eliminar este turno?')">
-                            Eliminar
+                        <div class="d-flex gap-2">
+
+                          <a href="https://wa.me/5492604693013{{ turno[4] }}"
+                          target="_blank"
+                          class="btn btn-success btn-sm">
+                          WhatsApp
                         </a>
+
+                        <a href="/eliminar/{{ turno[0] }}"
+                        class="btn btn-outline-danger btn-sm"
+                        onclick="return confirm('¿Eliminar este turno?')">
+                        Eliminar
+                      </a>
+
+</div>
 
                     </li>
                 {% else %}
