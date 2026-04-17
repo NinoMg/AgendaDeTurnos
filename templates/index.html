@@ -7,21 +7,29 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+
+<body style="background-color: #111; color: white;">
 
 <div class="container my-5">
 
     <!-- HERO / PRIMER IMPACTO -->
-    <div class="text-center mb-5">
-    <h1 class="fw-bold">💈 Agenda de Turnos</h1>
+    <div class="text-center mb-5 p-4 rounded" style="background-color: #111; color: white;">
 
-    <p class="lead">
+    <img src="{{ url_for('static', filename='logoClaro.png') }}"
+         alt="logo"
+         style="max-width: 100px;"
+         class="mb-3">
+
+    <h1 class="fw-bold">Agenda de Turnos</h1>
+
+    <p class="lead mb-2">
         Organizá tus clientes en segundos
     </p>
 
-    <p class="text-muted">
-        Olvidate del papel, evitá superposiciones y atendé mejor
+    <p style="color: #aaa;">
+        Evitá huecos, superposiciones y atendé mejor
     </p>
+
 </div>
 
     <!-- MENSAJES -->
@@ -37,7 +45,7 @@
     {% endwith %}
 
     <!-- FORMULARIO -->
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4 bg-dark text-white">
         <div class="card-body">
 
             <h5 class="mb-3">➕ Agendá un turno</h5>
@@ -63,6 +71,12 @@
                     <div class="invalid-feedback">Seleccione una hora.</div>
                 </div>
 
+                <div class="col-md-3">
+                    <label for="telefono" class="form-label">teléfono</label>
+                    <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                    <div class="invalid-feedback">Ingrese su número de teléfono.</div>
+                </div>
+
                 <div class="col-12">
                     <button type="submit" class="btn btn-dark w-100">
                         Guardar turno
@@ -84,10 +98,11 @@
                     <li class="list-group-item d-flex justify-content-between align-items-center">
 
                         <div>
-                            <strong>{{ turno[1] }}</strong><br>
-                            <small class="text-muted">
-                                {{ turno[2] }} a las {{ turno[3] }}
-                            </small>
+                          <strong>{{ turno[1] }}</strong><br>
+                          <small class="text-muted">
+                            {{ turno[2] }} a las {{ turno[3] }} <br>
+                            📱 {{ turno[4] }}
+                          </small>
                         </div>
 
                         <a href="/eliminar/{{ turno[0] }}"
