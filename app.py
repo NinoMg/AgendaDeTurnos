@@ -1,44 +1,42 @@
 from flask import Flask, render_template, request, redirect, flash
-import sqlite3
 import os
+import psycopg2
 
 app = Flask(__name__)
-
 app.secret_key = os.environ.get("SECRET_KEY", "dev")
 
-# Inicializar base de datos
-def agregar_columna_si_no_existe():
-    conn = sqlite3.connect('turnos.db')
-    c = conn.cursor()
+# conexión a PostgreSQL
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
-    try:
-        c.execute("ALTER TABLE turnos ADD COLUMN telefono TEXT")
-    except:
-        pass  # si ya existe, no hace nada
+def get_connection():
+    return psycopg2.connect(DATABASE_URL)
 
-    conn.commit()
-    conn.close()
-    
+# crear tabla si no existe
 def init_db():
-    conn = sqlite3.connect('turnos.db')
+    conn = get_connection()
     c = conn.cursor()
+
     c.execute('''
         CREATE TABLE IF NOT EXISTS turnos (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             nombre TEXT,
             fecha TEXT,
-            hora TEXT
+            hora TEXT,
+            telefono TEXT
         )
     ''')
+
     conn.commit()
     conn.close()
 
 @app.route('/')
 def index():
-    conn = sqlite3.connect('turnos.db')
+    conn = get_connection()
     c = conn.cursor()
+
     c.execute("SELECT * FROM turnos ORDER BY fecha, hora")
     turnos = c.fetchall()
+
     conn.close()
     return render_template('index.html', turnos=turnos)
 
@@ -48,21 +46,19 @@ def agregar():
     fecha = request.form.get('fecha', '').strip()
     hora = request.form.get('hora', '').strip()
     telefono = request.form.get('telefono', '').strip()
-    
-    # Validación
-    if not nombre or not fecha or not hora:
-        flash("Complete todos los campos", 'warning')
-        return redirect('/')
 
     if not nombre or not fecha or not hora or not telefono:
         flash("Complete todos los campos", 'warning')
         return redirect('/')
-        
-    conn = sqlite3.connect('turnos.db')
+
+    conn = get_connection()
     c = conn.cursor()
 
-    # Verificar duplicado
-    c.execute("SELECT * FROM turnos WHERE fecha = ? AND hora = ?", (fecha, hora))
+    # verificar duplicado
+    c.execute(
+        "SELECT * FROM turnos WHERE fecha = %s AND hora = %s",
+        (fecha, hora)
+    )
     existe = c.fetchone()
 
     if existe:
@@ -70,11 +66,12 @@ def agregar():
         flash("Ya existe un turno en ese horario", 'danger')
         return redirect('/')
 
-    # Insertar turno
+    # insertar turno
     c.execute(
-        "INSERT INTO turnos (nombre, fecha, hora, telefono) VALUES (?, ?, ?, ?)",
+        "INSERT INTO turnos (nombre, fecha, hora, telefono) VALUES (%s, %s, %s, %s)",
         (nombre, fecha, hora, telefono)
     )
+
     conn.commit()
     conn.close()
 
@@ -83,9 +80,11 @@ def agregar():
 
 @app.route('/eliminar/<int:id>')
 def eliminar(id):
-    conn = sqlite3.connect('turnos.db')
+    conn = get_connection()
     c = conn.cursor()
-    c.execute("DELETE FROM turnos WHERE id = ?", (id,))
+
+    c.execute("DELETE FROM turnos WHERE id = %s", (id,))
+
     conn.commit()
     conn.close()
 
@@ -93,6 +92,5 @@ def eliminar(id):
     return redirect('/')
 
 if __name__ == '__main__':
-        init_db()
-        agregar_columna_si_no_existe()
-        app.run(debug=True)
+    init_db()
+    app.run(debug=True)
