@@ -5,6 +5,9 @@ import psycopg2
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev")
 
+with app.app_context():
+    init_db()
+    
 # conexión a PostgreSQL
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
