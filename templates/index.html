@@ -8,7 +8,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 
-<body style="background-color: #111; color: white;">
+<body class="bg-dark text-light">
 
 <div class="container my-5">
 
@@ -20,15 +20,15 @@
          style="max-width: 100px;"
          class="mb-3">
 
-    <h1 class="fw-bold">Agenda de Turnos</h1>
+         <h1 class="fw-bold">Tu corte, sin espera</h1>
 
-    <p class="lead mb-2">
-        Organizá tus clientes en segundos
-    </p>
+         <p class="lead mb-2">
+         Reservá tu turno en segundos
+         </p>
 
-    <p style="color: #aaa;">
-        Evitá huecos, superposiciones y atendé mejor
-    </p>
+         <p style="color: #aaa;">
+         Confirmación rápida por WhatsApp
+         </p>
 
 </div>
 
@@ -48,8 +48,9 @@
     <div class="card shadow-sm mb-4 bg-dark text-white">
         <div class="card-body">
 
-            <h5 class="mb-3">➕ Agendá un turno</h5>
-            <p class="text-muted">Completá los datos para agendar rápidamente.</p>
+          <h5 class="mb-3">💈 Reservá tu turno</h5>
+          <p class="text-muted">Elegí día y horario en segundos</p>
+
 
             <form id="turnoForm" action="/agregar" method="post" class="row g-3 needs-validation" novalidate>
 
@@ -73,14 +74,14 @@
 
                 <div class="col-md-3">
                     <label for="telefono" class="form-label">teléfono</label>
-                    <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                    <input type="tel" class="form-control form-control-lg" id="telefono" name="telefono" placeholder="Ej: 2604234567" required>
                     <div class="invalid-feedback">Ingrese su número de teléfono.</div>
                 </div>
 
                 <div class="col-12">
-                    <button type="submit" class="btn btn-dark w-100">
-                        Guardar turno
-                    </button>
+                  <button type="submit" class="btn btn-success btn-lg w-100">
+                    Reservar ahora
+                  </button>
                 </div>
             </form>
 
@@ -93,7 +94,7 @@
 
             <h5 class="mb-3">📋 Próximos turnos</h5>
 
-            <ul class="list-group">
+            <ul class="list-group list-group-flush">
                 {% for turno in turnos %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
 
@@ -107,24 +108,25 @@
 
                         <div class="d-flex gap-2">
 
-                          <a href="https://wa.me/549{{ turno[4] }}"
+                          <a href="https://wa.me/549{{ turno[4] }}?text=Hola,%20quiero%20confirmar%20mi%20turno%20del%20{{ turno[2] }}%20a%20las%20{{ turno[3] }}"
                           target="_blank"
                           class="btn btn-success btn-sm">
-                          WhatsApp
+                          Confirmar
                         </a>
 
+                        <!--
                         <a href="/eliminar/{{ turno[0] }}"
                         class="btn btn-outline-danger btn-sm"
                         onclick="return confirm('¿Eliminar este turno?')">
                         Eliminar
                       </a>
-
+-->
 </div>
 
                     </li>
                 {% else %}
                     <li class="list-group-item text-center">
-                        No hay turnos registrados
+                        Aún no hay turnos. Sé el primero en reservar 🔥
                     </li>
                 {% endfor %}
             </ul>

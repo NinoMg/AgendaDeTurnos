@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, flash
 import psycopg2
 import os
+import urllib.parse
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev")
@@ -8,16 +9,16 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 
-# 🔌 conexión
+# 🔌 conexión a PostgreSQL
 def get_connection():
-    return psycopg2.connect(DATABASE_URL)
+    return psycopg2.connect(DATABASE_URL, sslmode='require')
 
-
-# 🧱 crear tabla
+# 🧱 crear tabla si no existe
 def init_db():
     conn = get_connection()
     c = conn.cursor()
 
+    # crear tabla si no existe
     c.execute("""
         CREATE TABLE IF NOT EXISTS turnos (
             id SERIAL PRIMARY KEY,
@@ -28,11 +29,19 @@ def init_db():
         )
     """)
 
+    # intentar agregar restricción única (si no existe)
+    try:
+        c.execute("""
+            ALTER TABLE turnos
+            ADD CONSTRAINT unique_turno UNIQUE (fecha, hora)
+        """)
+    except:
+        pass  # ya existe → no rompe
+
     conn.commit()
     conn.close()
 
-
-# 🚀 ACA VA (después de definir la función)
+# 🚀 ejecutar al iniciar (IMPORTANTE en Render)
 with app.app_context():
     init_db()
 
@@ -54,40 +63,70 @@ def agregar():
     hora = request.form.get('hora', '').strip()
     telefono = request.form.get('telefono', '').strip()
 
+    # ✅ validación
     if not nombre or not fecha or not hora or not telefono:
-        flash("Complete todos los campos", 'warning')
+        flash("Completá todos los campos", 'warning')
+        return redirect('/')
+
+    if not telefono.isdigit():
+        flash("El teléfono debe tener solo números", 'warning')
         return redirect('/')
 
     conn = get_connection()
     c = conn.cursor()
 
-    c.execute("SELECT * FROM turnos WHERE fecha = %s AND hora = %s", (fecha, hora))
+    # 🔒 evitar duplicados
+    c.execute(
+        "SELECT * FROM turnos WHERE fecha = %s AND hora = %s",
+        (fecha, hora)
+    )
     existe = c.fetchone()
 
     if existe:
         conn.close()
-        flash("Ya existe un turno en ese horario", 'danger')
+        flash("Ese horario ya está ocupado", 'danger')
         return redirect('/')
 
-    c.execute(
-        "INSERT INTO turnos (nombre, fecha, hora, telefono) VALUES (%s, %s, %s, %s)",
-        (nombre, fecha, hora, telefono)
-    )
-
-    conn.commit()
+    # 💾 guardar turno (protegido)
+    try:
+        c.execute(
+            "INSERT INTO turnos (nombre, fecha, hora, telefono) VALUES (%s, %s, %s, %s)",
+            (nombre, fecha, hora, telefono)
+        )
+        conn.commit()
+    except:
+        conn.close()
+        flash("Ese horario ya está ocupado", 'danger')
+        return redirect('/')
+    
     conn.close()
 
-    flash("Turno agregado correctamente", 'success')
-    return redirect('/')
+    # 📲 mensaje para WhatsApp
+    mensaje = f"""
+Hola! Quiero confirmar mi turno:
+
+👤 Nombre: {nombre}
+📅 Fecha: {fecha}
+⏰ Hora: {hora}
+📱 Tel: {telefono}
+"""
+
+    mensaje = urllib.parse.quote(mensaje)
+
+    # 🔥 CAMBIAR ESTE NÚMERO POR EL DEL BARBERO
+    numero_barbero = "5492604693013"
+
+    url = f"https://wa.me/{numero_barbero}?text={mensaje}"
+
+    # 👉 redirige directo a WhatsApp
+    return redirect(url)
 
 
-@app.route('/eliminar/<int:id>')
-def eliminar(id):
-    conn = get_connection()
-    c = conn.cursor()
-    c.execute("DELETE FROM turnos WHERE id = %s", (id,))
-    conn.commit()
-    conn.close()
+# ❌ eliminamos endpoint público (seguridad)
+# @app.route('/eliminar/<int:id>')
+# def eliminar(id):
+#     pass
 
-    flash("Turno eliminado", 'info')
-    return redirect('/')
+
+if __name__ == '__main__':
+    app.run(debug=True)
