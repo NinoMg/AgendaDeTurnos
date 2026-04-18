@@ -8,6 +8,8 @@ app.secret_key = os.environ.get("SECRET_KEY", "dev")
 # conexión a PostgreSQL
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+print("DEBUG DATABASE_URL:", DATABASE_URL)
+
 def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
