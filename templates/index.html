@@ -435,43 +435,71 @@
     </div>
   </section>
 
-  <!-- ── PRÓXIMOS TURNOS ── -->
+  <!-- ── DISPONIBILIDAD VISUAL ── -->
   <section>
     <div class="card">
-      <h2>📋 Próximos Turnos</h2>
+      <h2>📅 Disponibilidad</h2>
 
-      {% if turnos %}
-      <div class="turnos-list">
-        {% for t in turnos %}
-        {% set tid, tnombre, tfecha, thora, ttelefono, tservicio = t %}
-        <div class="turno-item">
-          <div class="turno-info">
-            <div class="turno-nombre">{{ tnombre }}</div>
-            <div class="turno-meta">
-              📱 {{ ttelefono }}
-              &nbsp;·&nbsp;
-              <span class="badge badge-servicio">{{ tservicio or 'Corte' }}</span>
-            </div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem">
-            <div class="turno-date">{{ thora }}</div>
-            <div style="font-size:.75rem;color:var(--muted)">
-              {{ tfecha[8:10] }}/{{ tfecha[5:7] }}/{{ tfecha[0:4] }}
-            </div>
-            {% if is_admin %}
-            <form action="/admin/eliminar/{{ tid }}" method="POST" onsubmit="return confirm('¿Eliminar turno de {{ tnombre }}?')">
-              <button type="submit" class="btn-delete">🗑 Eliminar</button>
-            </form>
-            {% endif %}
-          </div>
+      <!-- Mini semana -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem">
+        <span id="semana-label" style="font-size:.9rem;font-weight:600;color:var(--muted)"></span>
+        <div style="display:flex;gap:.4rem">
+          <button type="button" id="btn-prev" onclick="cambiarSemana(-1)"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:7px;width:28px;height:28px;color:var(--text);cursor:pointer;font-size:.9rem">‹</button>
+          <button type="button" id="btn-next" onclick="cambiarSemana(1)"
+            style="background:var(--surface);border:1px solid var(--border);border-radius:7px;width:28px;height:28px;color:var(--text);cursor:pointer;font-size:.9rem">›</button>
         </div>
-        {% endfor %}
       </div>
-      {% else %}
-      <div class="empty">
-        No hay turnos próximos 🙌
+
+      <div id="semana-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:.35rem;margin-bottom:1.1rem"></div>
+
+      <!-- Horarios del día seleccionado -->
+      <div style="font-size:.75rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.55rem">
+        Horarios disponibles
+      </div>
+      <div id="cal-horarios" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin-bottom:.85rem">
+        <div style="color:var(--muted);font-size:.82rem;grid-column:1/-1">Seleccioná un día en el formulario</div>
+      </div>
+
+      <div style="display:flex;gap:1rem;font-size:.72rem;color:var(--muted);flex-wrap:wrap">
+        <span>🟢 Disponible</span>
+        <span>🔴 Ocupado</span>
+        <span>⬜ No disponible</span>
+      </div>
+
+      {% if is_admin %}
+      <div style="margin-top:1.25rem;border-top:1px solid var(--border);padding-top:1rem">
+        <div style="font-size:.8rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:.75rem">Turnos del día seleccionado</div>
+        <div id="turnos-dia">
+          {% if turnos %}
+          <div class="turnos-list">
+            {% for t in turnos %}
+            {% set tid, tnombre, tfecha, thora, ttelefono, tservicio = t %}
+            <div class="turno-item">
+              <div class="turno-info">
+                <div class="turno-nombre">{{ tnombre }}</div>
+                <div class="turno-meta">
+                  📱 {{ ttelefono }} &nbsp;·&nbsp;
+                  <span class="badge badge-servicio">{{ tservicio or 'Corte' }}</span>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem">
+                <div class="turno-date">{{ thora }}</div>
+                <div style="font-size:.72rem;color:var(--muted)">{{ tfecha[8:10] }}/{{ tfecha[5:7] }}</div>
+                <form action="/admin/eliminar/{{ tid }}" method="POST" onsubmit="return confirm('¿Eliminar turno de {{ tnombre }}?')">
+                  <button type="submit" class="btn-delete">🗑</button>
+                </form>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="empty">Sin turnos próximos 🙌</div>
+          {% endif %}
+        </div>
       </div>
       {% endif %}
+
     </div>
   </section>
 
@@ -572,6 +600,107 @@
       alert('Por favor seleccioná un horario.');
     }
   });
+
+  // ── Mini-semana en panel de disponibilidad ──────────────────────────
+  let semanaOffset = 0;
+  let diaSelCal = null;
+
+  function isoDate(d) { return d.toISOString().split('T')[0]; }
+  function nombreDia(d) { return ['D','L','M','X','J','V','S'][d.getDay()]; }
+  function mesLabel(d) {
+    return ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()];
+  }
+
+  function lunes(offset) {
+    const hoy = new Date('{{ hoy }}' + 'T00:00:00');
+    const dow = hoy.getDay() === 0 ? 6 : hoy.getDay() - 1;
+    const base = new Date(hoy);
+    base.setDate(hoy.getDate() - dow + offset * 7);
+    return base;
+  }
+
+  function renderSemanaDisp() {
+    const grid  = document.getElementById('semana-grid');
+    const label = document.getElementById('semana-label');
+    const inicio = lunes(semanaOffset);
+    grid.innerHTML = '';
+    const dias = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(inicio); d.setDate(inicio.getDate() + i); dias.push(d);
+    }
+    label.textContent = `${dias[0].getDate()} ${mesLabel(dias[0])} — ${dias[6].getDate()} ${mesLabel(dias[6])}`;
+
+    dias.forEach(d => {
+      const iso = isoDate(d);
+      const pasado = iso < '{{ hoy }}';
+      const libre = disponibilidad[iso] ?? horarios.length;
+      const lleno = libre === 0;
+
+      const btn = document.createElement('div');
+      btn.style.cssText = `
+        display:flex;flex-direction:column;align-items:center;gap:2px;
+        padding:.35rem .1rem;border-radius:8px;cursor:${pasado||lleno?'not-allowed':'pointer'};
+        border:1.5px solid ${diaSelCal===iso?'var(--gold)':pasado?'#222':'var(--border)'};
+        background:${diaSelCal===iso?'var(--gold)':pasado?'transparent':'var(--surface)'};
+        opacity:${pasado?.35:1};
+      `;
+      btn.innerHTML = `
+        <span style="font-size:.58rem;font-weight:700;color:${diaSelCal===iso?'#000':'var(--muted)'};text-transform:uppercase">${nombreDia(d)}</span>
+        <span style="font-size:.95rem;font-weight:700;color:${diaSelCal===iso?'#000':'var(--text)'}">${d.getDate()}</span>
+        <span style="font-size:.58rem;color:${lleno?'var(--red)':diaSelCal===iso?'#000':'var(--muted)'}">${pasado?'–':lleno?'Lleno':libre+'lib'}</span>
+      `;
+      if (!pasado) btn.onclick = () => { diaSelCal = iso; renderSemanaDisp(); cargarHorariosDisp(iso); };
+      grid.appendChild(btn);
+    });
+    document.getElementById('btn-prev').disabled = semanaOffset <= 0;
+  }
+
+  function cambiarSemana(dir) {
+    if (semanaOffset + dir < 0) return;
+    semanaOffset += dir;
+    renderSemanaDisp();
+  }
+
+  function cargarHorariosDisp(fecha) {
+    const grid = document.getElementById('cal-horarios');
+    grid.innerHTML = '<div style="color:var(--muted);font-size:.82rem;grid-column:1/-1">Cargando...</div>';
+    fetch(`/disponibilidad/${fecha}`)
+      .then(r => r.json())
+      .then(data => {
+        grid.innerHTML = '';
+        data.forEach(h => {
+          const slot = document.createElement('div');
+          const color = !h.disponible ? '#3d1f1f' : 'var(--surface)';
+          const textColor = !h.disponible ? '#5a3030' : 'var(--muted)';
+          const cross = !h.disponible ? 'line-through' : 'none';
+          slot.style.cssText = `
+            background:${color};border:1px solid ${!h.disponible?'#3d1f1f':'var(--border)'};
+            border-radius:7px;padding:.4rem;text-align:center;
+            font-size:.8rem;color:${textColor};text-decoration:${cross};
+          `;
+          slot.textContent = h.hora;
+          // Click en slot disponible sincroniza con el formulario de reserva
+          if (h.disponible) {
+            slot.style.cursor = 'pointer';
+            slot.onclick = () => {
+              document.getElementById('fecha-input').value = fecha;
+              cargarHorarios(fecha);
+              setTimeout(() => {
+                document.querySelectorAll('.hora-btn').forEach(b => {
+                  if (b.textContent.trim() === h.hora && !b.disabled) {
+                    b.click();
+                  }
+                });
+              }, 600);
+              document.getElementById('reserva-form').scrollIntoView({ behavior: 'smooth' });
+            };
+          }
+          grid.appendChild(slot);
+        });
+      });
+  }
+
+  renderSemanaDisp();
 </script>
 
 </body>
