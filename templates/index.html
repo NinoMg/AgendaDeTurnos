@@ -1,156 +1,577 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Agenda de Turnos</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ nombre_barbero }} — Turnos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0d0d0d;
+      --surface:  #161616;
+      --card:     #1e1e1e;
+      --border:   #2a2a2a;
+      --gold:     #c9a84c;
+      --gold-dim: #8a6f2e;
+      --red:      #e74c3c;
+      --green:    #27ae60;
+      --text:     #f0ece4;
+      --muted:    #888;
+      --radius:   10px;
+    }
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 3px;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .logo span { font-size: 1.4rem; }
+    .header-right { display: flex; align-items: center; gap: 1rem; }
+
+    /* ── FLASH ── */
+    .flashes {
+      position: fixed;
+      top: 80px;
+      right: 1.5rem;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .flash {
+      padding: .75rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: .9rem;
+      font-weight: 500;
+      animation: slideIn .3s ease;
+      cursor: pointer;
+    }
+    .flash.success { background: var(--green); color: #fff; }
+    .flash.danger  { background: var(--red);   color: #fff; }
+    .flash.warning { background: #e67e22;      color: #fff; }
+    .flash.info    { background: #2980b9;      color: #fff; }
+    @keyframes slideIn {
+      from { transform: translateX(60px); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+
+    /* ── MAIN LAYOUT ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    @media (max-width: 760px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem;
+    }
+    .card h2 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 2px;
+      color: var(--gold);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 1rem; }
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .4rem;
+    }
+    input, select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      padding: .7rem 1rem;
+      font-size: .95rem;
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--gold);
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) brightness(.7);
+    }
+    select option { background: var(--surface); }
+
+    /* ── HORARIOS GRID ── */
+    .horarios-label {
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: .6rem;
+    }
+    .horarios-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .5rem;
+      margin-bottom: 1rem;
+    }
+    .hora-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: .5rem;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: all .15s;
+      text-align: center;
+    }
+    .hora-btn:hover:not(.ocupado):not(.pasado) {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .hora-btn.selected {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #000;
+      font-weight: 700;
+    }
+    .hora-btn.ocupado {
+      background: #2a1818;
+      border-color: #3d1f1f;
+      color: #5a3030;
+      cursor: not-allowed;
+      text-decoration: line-through;
+    }
+    .hora-btn.pasado {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+    #hora-input { display: none; }
+
+    /* ── SUBMIT BTN ── */
+    .btn-submit {
+      width: 100%;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: var(--radius);
+      padding: .85rem;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+      margin-top: .5rem;
+    }
+    .btn-submit:hover { background: #e0be6a; }
+    .btn-submit:active { transform: scale(.98); }
+
+    /* ── TURNOS LIST ── */
+    .turnos-list { display: flex; flex-direction: column; gap: .75rem; }
+    .turno-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--gold);
+      border-radius: var(--radius);
+      padding: .85rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      animation: fadeUp .3s ease both;
+    }
+    @keyframes fadeUp {
+      from { transform: translateY(8px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+    .turno-info { flex: 1; min-width: 0; }
+    .turno-nombre {
+      font-weight: 600;
+      font-size: .95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .turno-meta {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: .2rem;
+    }
+    .badge {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .5px;
+      padding: .2rem .55rem;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge-servicio { background: #2a2a1e; color: var(--gold); border: 1px solid var(--gold-dim); }
+    .turno-date {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem 0;
+      font-size: .95rem;
+    }
+
+    /* ── ADMIN SECTION ── */
+    .admin-toggle {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: var(--radius);
+      padding: .4rem .8rem;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .admin-toggle:hover { border-color: var(--gold); color: var(--gold); }
+    .admin-login-panel {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-top: .5rem;
+    }
+    .admin-login-panel.open { display: flex; gap: .5rem; align-items: center; }
+    .admin-login-panel input { flex: 1; }
+    .btn-small {
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: .5rem 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: .85rem;
+    }
+    .admin-badge {
+      background: var(--gold);
+      color: #000;
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      letter-spacing: .5px;
+    }
+    .btn-delete {
+      background: none;
+      border: 1px solid #3d1f1f;
+      border-radius: 8px;
+      color: #e74c3c;
+      padding: .3rem .6rem;
+      font-size: .8rem;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-delete:hover { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+
+    /* ── DISPONIBILIDAD MINI ── */
+    .disp-info {
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: .35rem;
+    }
+    .disp-info span.ok   { color: var(--green); font-weight: 600; }
+    .disp-info span.low  { color: #e67e22;      font-weight: 600; }
+    .disp-info span.full { color: var(--red);   font-weight: 600; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--muted);
+      font-size: .8rem;
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+    footer strong { color: var(--gold); }
+  </style>
 </head>
+<body>
 
-<body class="bg-dark text-light">
+<header>
+  <div class="logo">
+    <span>💈</span> {{ nombre_barbero }}
+  </div>
+  <div class="header-right">
+    {% if is_admin %}
+      <span class="admin-badge">ADMIN</span>
+      <a href="/admin/todos" style="color:var(--muted);font-size:.85rem;text-decoration:none;">Ver todos</a>
+      <a href="/admin/logout" style="color:var(--muted);font-size:.85rem;text-decoration:none;">Salir</a>
+    {% else %}
+      <button class="admin-toggle" onclick="toggleAdmin()">Admin</button>
+    {% endif %}
+  </div>
+</header>
 
-<div class="container my-5">
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes">
+    {% for cat, msg in messages %}
+      <div class="flash {{ cat }}" onclick="this.remove()">{{ msg }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
 
-    <!-- HERO / PRIMER IMPACTO -->
-    <div class="text-center mb-5 p-4 rounded" style="background-color: #111; color: white;">
+<main>
 
-    <img src="{{ url_for('static', filename='logoClaro.png') }}"
-         alt="logo"
-         style="max-width: 100px;"
-         class="mb-3">
+  <!-- ── RESERVAR ── -->
+  <section>
+    <div class="card">
+      <h2>✂️ Reservar Turno</h2>
 
-         <h1 class="fw-bold">Tu corte, sin espera</h1>
+      {% if not is_admin %}
+      <div id="admin-panel" class="admin-login-panel">
+        <form action="/admin/login" method="POST" style="display:flex;gap:.5rem;width:100%">
+          <input type="password" name="password" placeholder="Contraseña admin" />
+          <button type="submit" class="btn-small">Entrar</button>
+        </form>
+      </div>
+      {% endif %}
 
-         <p class="lead mb-2">
-         Reservá tu turno en segundos
-         </p>
+      <form action="/agregar" method="POST" id="reserva-form" style="margin-top:1.25rem">
 
-         <p style="color: #aaa;">
-         Confirmación rápida por WhatsApp
-         </p>
+        <div class="form-group">
+          <label>Tu nombre</label>
+          <input type="text" name="nombre" placeholder="Ej: Juan García" required maxlength="60" />
+        </div>
 
-</div>
+        <div class="form-group">
+          <label>Servicio</label>
+          <select name="servicio">
+            <option value="Corte">✂️ Corte</option>
+            <option value="Barba">🪒 Barba</option>
+            <option value="Corte + Barba">✂️🪒 Corte + Barba</option>
+            <option value="Diseño">✏️ Diseño</option>
+            <option value="Degradé">🔄 Degradé</option>
+          </select>
+        </div>
 
-    <!-- MENSAJES -->
-    {% with mensajes = get_flashed_messages(with_categories=true) %}
-        {% if mensajes %}
-            {% for category, msg in mensajes %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ msg }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" name="fecha" id="fecha-input"
+            min="{{ hoy }}"
+            onchange="cargarHorarios(this.value)" required />
+          <div class="disp-info" id="disp-info"></div>
+        </div>
 
-    <!-- FORMULARIO -->
-    <div class="card shadow-sm mb-4 bg-dark text-white">
-        <div class="card-body">
+        <div class="form-group">
+          <div class="horarios-label">Horario</div>
+          <div class="horarios-grid" id="horarios-grid">
+            <div style="color:var(--muted);font-size:.85rem;grid-column:1/-1">
+              Seleccioná una fecha primero
+            </div>
+          </div>
+          <input type="hidden" name="hora" id="hora-input" required />
+        </div>
 
-          <h5 class="mb-3">💈 Reservá tu turno</h5>
-          <p class="text-muted">Elegí día y horario en segundos</p>
+        <div class="form-group">
+          <label>Teléfono (WhatsApp)</label>
+          <input type="tel" name="telefono" placeholder="Ej: 2604123456"
+            required pattern="[0-9]+" minlength="8" maxlength="15" />
+        </div>
 
+        <button type="submit" class="btn-submit">
+          📲 CONFIRMAR POR WHATSAPP
+        </button>
+      </form>
+    </div>
+  </section>
 
-            <form id="turnoForm" action="/agregar" method="post" class="row g-3 needs-validation" novalidate>
+  <!-- ── PRÓXIMOS TURNOS ── -->
+  <section>
+    <div class="card">
+      <h2>📋 Próximos Turnos</h2>
 
-                <div class="col-md-6">
-                    <label for="nombre" class="form-label">Nombre del cliente</label>
-                    <input type="text" class="form-control" id="nombre" name="nombre" required>
-                    <div class="invalid-feedback">Ingrese el nombre.</div>
-                </div>
-
-                <div class="col-md-3">
-                    <label for="fecha" class="form-label">Fecha</label>
-                    <input type="date" class="form-control" id="fecha" name="fecha" required>
-                    <div class="invalid-feedback">Seleccione una fecha.</div>
-                </div>
-
-                <div class="col-md-3">
-                    <label for="hora" class="form-label">Hora</label>
-                    <input type="time" class="form-control" id="hora" name="hora" required>
-                    <div class="invalid-feedback">Seleccione una hora.</div>
-                </div>
-
-                <div class="col-md-3">
-                    <label for="telefono" class="form-label">teléfono</label>
-                    <input type="tel" class="form-control form-control-lg" id="telefono" name="telefono" placeholder="Ej: 2604234567" required>
-                    <div class="invalid-feedback">Ingrese su número de teléfono.</div>
-                </div>
-
-                <div class="col-12">
-                  <button type="submit" class="btn btn-success btn-lg w-100">
-                    Reservar ahora
-                  </button>
-                </div>
+      {% if turnos %}
+      <div class="turnos-list">
+        {% for t in turnos %}
+        {% set tid, tnombre, tfecha, thora, ttelefono, tservicio = t %}
+        <div class="turno-item">
+          <div class="turno-info">
+            <div class="turno-nombre">{{ tnombre }}</div>
+            <div class="turno-meta">
+              📱 {{ ttelefono }}
+              &nbsp;·&nbsp;
+              <span class="badge badge-servicio">{{ tservicio or 'Corte' }}</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem">
+            <div class="turno-date">{{ thora }}</div>
+            <div style="font-size:.75rem;color:var(--muted)">
+              {{ tfecha[8:10] }}/{{ tfecha[5:7] }}/{{ tfecha[0:4] }}
+            </div>
+            {% if is_admin %}
+            <form action="/admin/eliminar/{{ tid }}" method="POST" onsubmit="return confirm('¿Eliminar turno de {{ tnombre }}?')">
+              <button type="submit" class="btn-delete">🗑 Eliminar</button>
             </form>
-
+            {% endif %}
+          </div>
         </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty">
+        No hay turnos próximos 🙌
+      </div>
+      {% endif %}
     </div>
+  </section>
 
-    <!-- LISTA -->
-    <div class="card shadow-sm">
-        <div class="card-body">
+</main>
 
-            <h5 class="mb-3">📋 Próximos turnos</h5>
-
-            <ul class="list-group list-group-flush">
-                {% for turno in turnos %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-
-                        <div>
-                          <strong>{{ turno[1] }}</strong><br>
-                          <small class="text-muted">
-                            {{ turno[2] }} a las {{ turno[3] }} <br>
-                            📱 {{ turno[4] }}
-                          </small>
-                        </div>
-
-                        <div class="d-flex gap-2">
-
-                          <a href="https://wa.me/549{{ turno[4] }}?text=Hola,%20quiero%20confirmar%20mi%20turno%20del%20{{ turno[2] }}%20a%20las%20{{ turno[3] }}"
-                          target="_blank"
-                          class="btn btn-success btn-sm">
-                          Confirmar
-                        </a>
-
-                        <!--
-                        <a href="/eliminar/{{ turno[0] }}"
-                        class="btn btn-outline-danger btn-sm"
-                        onclick="return confirm('¿Eliminar este turno?')">
-                        Eliminar
-                      </a>
--->
-</div>
-
-                    </li>
-                {% else %}
-                    <li class="list-group-item text-center">
-                        Aún no hay turnos. Sé el primero en reservar 🔥
-                    </li>
-                {% endfor %}
-            </ul>
-
-        </div>
-    </div>
-
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<footer>
+  <strong>{{ nombre_barbero }}</strong> · Sistema de turnos online 💈
+</footer>
 
 <script>
-(function () {
-    'use strict';
-    var form = document.getElementById('turnoForm');
+  const disponibilidad = {{ disponibilidad | tojson }};
+  const horarios       = {{ horarios | tojson }};
 
-    form.addEventListener('submit', function (event) {
-        if (!form.checkValidity()) {
-            event.preventDefault();
-            event.stopPropagation();
-        }
-        form.classList.add('was-validated');
-    }, false);
-})();
+  function toggleAdmin() {
+    const p = document.getElementById('admin-panel');
+    p.classList.toggle('open');
+  }
+
+  // Auto-dismiss flashes
+  setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(f => f.style.opacity = '0');
+    setTimeout(() => document.querySelectorAll('.flash').forEach(f => f.remove()), 400);
+  }, 4000);
+
+  function cargarHorarios(fecha) {
+    if (!fecha) return;
+    const grid = document.getElementById('horarios-grid');
+    const info = document.getElementById('disp-info');
+    const disp = disponibilidad[fecha];
+
+    // Info disponibilidad
+    if (disp !== undefined) {
+      if (disp === 0) {
+        info.innerHTML = '<span class="full">Sin lugares disponibles</span>';
+      } else if (disp <= 3) {
+        info.innerHTML = `<span class="low">Solo ${disp} lugares disponibles</span>`;
+      } else {
+        info.innerHTML = `<span class="ok">${disp} lugares disponibles</span>`;
+      }
+    } else {
+      info.textContent = '';
+    }
+
+    // Cargar horarios desde API
+    grid.innerHTML = '<div style="color:var(--muted);font-size:.85rem">Cargando...</div>';
+    fetch(`/disponibilidad/${fecha}`)
+      .then(r => r.json())
+      .then(data => {
+        grid.innerHTML = '';
+        const ahora = new Date();
+        const hoy   = ahora.toISOString().split('T')[0];
+        const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
+
+        data.forEach(h => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = h.hora;
+          btn.className = 'hora-btn';
+
+          // Si es hoy, verificar hora pasada
+          if (fecha === hoy) {
+            const [hh, mm] = h.hora.split(':').map(Number);
+            if (hh * 60 + mm <= horaActual) {
+              btn.classList.add('pasado');
+              btn.disabled = true;
+              btn.title = 'Horario ya pasado';
+              grid.appendChild(btn);
+              return;
+            }
+          }
+
+          if (!h.disponible) {
+            btn.classList.add('ocupado');
+            btn.disabled = true;
+            btn.title = 'Ocupado';
+          } else {
+            btn.onclick = () => seleccionarHora(btn, h.hora);
+          }
+          grid.appendChild(btn);
+        });
+      })
+      .catch(() => {
+        grid.innerHTML = '<div style="color:var(--red);font-size:.85rem">Error cargando horarios</div>';
+      });
+  }
+
+  function seleccionarHora(btn, hora) {
+    document.querySelectorAll('.hora-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    document.getElementById('hora-input').value = hora;
+  }
+
+  // Validar form antes de enviar
+  document.getElementById('reserva-form').addEventListener('submit', function(e) {
+    const hora = document.getElementById('hora-input').value;
+    if (!hora) {
+      e.preventDefault();
+      alert('Por favor seleccioná un horario.');
+    }
+  });
 </script>
 
 </body>

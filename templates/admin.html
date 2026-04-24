@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — {{ nombre_barbero }}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:#0d0d0d; --surface:#161616; --card:#1e1e1e; --border:#2a2a2a;
+      --gold:#c9a84c; --red:#e74c3c; --green:#27ae60; --text:#f0ece4; --muted:#888;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); }
+    header {
+      background:var(--surface); border-bottom:1px solid var(--border);
+      padding:0 2rem; display:flex; align-items:center; justify-content:space-between;
+      height:70px; position:sticky; top:0; z-index:100;
+    }
+    .logo { font-family:'Bebas Neue',sans-serif; font-size:2rem; letter-spacing:3px; color:var(--gold); }
+    .flashes {
+      position:fixed; top:80px; right:1.5rem; z-index:200;
+      display:flex; flex-direction:column; gap:.5rem;
+    }
+    .flash { padding:.75rem 1.25rem; border-radius:10px; font-size:.9rem; cursor:pointer; }
+    .flash.success { background:var(--green); color:#fff; }
+    .flash.danger  { background:var(--red); color:#fff; }
+    main { max-width:1000px; margin:0 auto; padding:2rem 1.5rem; }
+    h1 { font-family:'Bebas Neue',sans-serif; font-size:2rem; color:var(--gold); letter-spacing:2px; margin-bottom:1.5rem; }
+    .stats {
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
+      gap:1rem; margin-bottom:2rem;
+    }
+    .stat {
+      background:var(--card); border:1px solid var(--border); border-radius:10px;
+      padding:1rem; text-align:center;
+    }
+    .stat .num { font-family:'Bebas Neue',sans-serif; font-size:2.5rem; color:var(--gold); }
+    .stat .label { font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+    table { width:100%; border-collapse:collapse; }
+    th {
+      text-align:left; padding:.6rem 1rem; font-size:.75rem; letter-spacing:1px;
+      text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border);
+    }
+    td { padding:.7rem 1rem; border-bottom:1px solid var(--border); font-size:.9rem; }
+    tr:hover td { background:var(--surface); }
+    .btn-delete {
+      background:none; border:1px solid #3d1f1f; border-radius:6px; color:var(--red);
+      padding:.25rem .55rem; font-size:.8rem; cursor:pointer; transition:all .15s;
+    }
+    .btn-delete:hover { background:var(--red); color:#fff; border-color:var(--red); }
+    .badge { font-size:.72rem; padding:.2rem .5rem; border-radius:20px; }
+    .badge-servicio { background:#2a2a1e; color:var(--gold); border:1px solid #8a6f2e; }
+    .tag-hoy { color:var(--green); font-weight:600; }
+    .tag-pasado { color:var(--muted); }
+    a.back { color:var(--gold); text-decoration:none; font-size:.9rem; }
+    a.back:hover { text-decoration:underline; }
+    @media (max-width:600px) { table, thead, tbody, th, td, tr { display:block; } th { display:none; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">💈 {{ nombre_barbero }} — Admin</div>
+  <div style="display:flex;gap:1rem;align-items:center">
+    <a href="/" class="back">← Volver</a>
+    <a href="/admin/logout" style="color:var(--muted);font-size:.85rem;text-decoration:none">Salir</a>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes">
+    {% for cat, msg in messages %}
+      <div class="flash {{ cat }}" onclick="this.remove()">{{ msg }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+  <h1>Panel de Administración</h1>
+
+  {% set hoy = namespace(val='') %}
+  {% set total = turnos|length %}
+  {% set futuros = turnos | selectattr(1, 'ge', '') | list | length %}
+
+  <div class="stats">
+    <div class="stat">
+      <div class="num">{{ total }}</div>
+      <div class="label">Total turnos</div>
+    </div>
+    <div class="stat">
+      <div class="num">{{ turnos | list | length }}</div>
+      <div class="label">En la base</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Nombre</th>
+        <th>Fecha</th>
+        <th>Hora</th>
+        <th>Teléfono</th>
+        <th>Servicio</th>
+        <th>Registrado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in turnos %}
+      {% set tid, tnombre, tfecha, thora, ttelefono, tservicio, tcreated = t %}
+      <tr>
+        <td style="color:var(--muted);font-size:.8rem">{{ tid }}</td>
+        <td><strong>{{ tnombre }}</strong></td>
+        <td>{{ tfecha[8:10] }}/{{ tfecha[5:7] }}/{{ tfecha[0:4] }}</td>
+        <td><strong>{{ thora }}</strong></td>
+        <td>
+          <a href="https://wa.me/54{{ ttelefono }}" target="_blank"
+             style="color:var(--gold);text-decoration:none;">
+            {{ ttelefono }}
+          </a>
+        </td>
+        <td><span class="badge badge-servicio">{{ tservicio or 'Corte' }}</span></td>
+        <td style="color:var(--muted);font-size:.8rem">
+          {% if tcreated %}{{ tcreated.strftime('%d/%m %H:%M') }}{% endif %}
+        </td>
+        <td>
+          <form action="/admin/eliminar/{{ tid }}" method="POST"
+                onsubmit="return confirm('¿Eliminar turno de {{ tnombre }}?')">
+            <button type="submit" class="btn-delete">🗑</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if not turnos %}
+  <div style="text-align:center;color:var(--muted);padding:3rem 0">
+    No hay turnos registrados.
+  </div>
+  {% endif %}
+</main>
+
+<script>
+  setTimeout(() => {
+    document.querySelectorAll('.flash').forEach(f => f.style.opacity='0');
+    setTimeout(() => document.querySelectorAll('.flash').forEach(f=>f.remove()), 400);
+  }, 4000);
+</script>
+
+</body>
+</html>
